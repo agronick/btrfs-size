@@ -22,7 +22,24 @@ for i in $COL2; do
         OUTPUT+="
 $ROWID  " 
       else
-        OUTPUT+=$(printf "%-9s" $(($i / 1024 / 1024))"M")     
+        MB=$(($i / 1024 / 1024))
+        KB=$(($i / 1024))
+        if [ $MB -eq 0 ]; then
+            if [ $KB -eq 0 ]; then
+                OUTPUT+=$(printf "%-9s" $i"B")  
+            else
+                OUTPUT+=$(printf "%-9s" $KB"KB")  
+            fi
+        else
+            if [ $MB -gt 1024 ]; then
+                GB=$(( $MB / 1024 ));
+                MB=$(( ( ( $MB % 1024 ) * 100 ) / 1024 )); 
+                OUTPUT+=$(printf "%-9s" "$GB.$MB""GB")
+            else
+                OUTPUT+=$(printf "%-9s" $MB"MB")
+            fi  
+        fi
+           
        fi
     fi
 done  
