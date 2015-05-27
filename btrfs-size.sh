@@ -8,40 +8,35 @@ if [ $1 ]; then
 LOCATION=$1
 fi
 
+OUTPUT="" 
+
 COL1=`sudo btrfs subvolume list "$LOCATION"`
 COL1=$(echo "$COL1" | cut -c 4-)
 
-COL2=`sudo btrfs qgroup show "$LOCATION"`
+
+COL2=`sudo btrfs qgroup show "$LOCATION" --raw 2>/dev/null`
+CONTINUE=false
+if [[ $COL2 == *"unrecognized option"* ]]; then
+    COL2=`sudo btrfs qgroup show "$LOCATION" `
+fi    
+
 COL2=$(echo "$COL2" | cut -c 2-) 
  
-OUTPUT="" 
 function convert()
 { 
-        local OUTPUT=""
-        local MB=$(($i / 1024 / 1024))
-        local KB=$(($i / 1024))
-        if [ $MB -eq 0 ]; then
-            if [ $KB -eq 0 ]; then
-                OUTPUT+=$(printf "%-9s" $i"B")  
-            else
-                OUTPUT+=$(printf "%-9s" $KB"KB")  
-            fi
-        else
-            if [ $MB -gt 1024 ]; then
-                GB=$(( $MB / 1024 ));
-                MB=$(( ( ( $MB % 1024 ) * 100 ) / 1024 )); 
-                OUTPUT+=$(printf "%-9s" "$GB.$MB""GB")
-            else
-                OUTPUT+=$(printf "%-9s" $MB"MB")
-            fi  
-        fi 
+        OUT=`echo "$i" | awk '{ sum=$1 ; hum[1024**3]="GB";hum[1024**2]="MB";hum[1024]="KB"; for (x=1024**3; x>=1024; x/=1024){ if (sum>=x) { printf "%.2f%s\n",sum/x,hum[x];break } }}'`
+        OUTPUT=$(printf "%-9s" $OUT) 
         echo "$OUTPUT"
 }
 
 i=0
 ECL_TOTAL=0
 INDEX=0
-for i in $COL2; do
+LC_ALL=C
+for i in $COL2; do  
+    if [[ $i == *"groupid"* ]] || [[ $i == *"----"* ]]; then
+        continue;
+    fi 
     if [[ ! $i =~ ^[A-Za-z-]+$ ]]; then  
       if [[ "$i" == *\/* ]]; then 
         INDEX=0
@@ -49,11 +44,16 @@ for i in $COL2; do
         OUTPUT+="
 $ROWID  " 
       else
-        ((INDEX++)) 
-        if [ $INDEX -eq 2 ]; then
-            ECL_TOTAL=$(($i + $ECL_TOTAL)) 
+        ((INDEX++))   
+        if [ -z `echo $i | tr -d "[:alpha:]"` ]; then
+            echo $i" letters\n"
+            OUTPUT="$OUTPUT"$(printf "%-9s" $i)
+        else
+            if [ $INDEX -eq 2 ]; then
+                ECL_TOTAL=$(($i + $ECL_TOTAL)) 
+            fi
+            OUTPUT="$OUTPUT$(convert $i)"
         fi
-        OUTPUT="$OUTPUT$(convert $i)"
        fi
     fi
 done  
@@ -65,6 +65,7 @@ printf "%-9s" "Total"
 printf "Exclusive Data"
 printf "\n"
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
+
 
 IFS=$'\n'
 
@@ -78,8 +79,11 @@ for item in  $COL1; do
                 break;
             fi
     done
-done
-printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
-i=$ECL_TOTAL
-printf "%-64s" " "  
-printf "Exclusive Total: $(convert $i) \n"
+done 
+
+if [ $ECL_TOTAL -gt "1" ]; then
+    printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
+    i=$ECL_TOTAL
+    printf "%-64s" " "  
+    printf "Exclusive Total: $(convert $i) \n"
+fi
