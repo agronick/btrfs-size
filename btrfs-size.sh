@@ -13,15 +13,11 @@ COL1=$(echo "$COL1" | cut -c 4-)
 
 COL2=`sudo btrfs qgroup show "$LOCATION"`
 COL2=$(echo "$COL2" | cut -c 2-) 
-i=0;
+ 
 OUTPUT="" 
-for i in $COL2; do
-    if [[ ! $i =~ ^[A-Za-z-]+$ ]]; then  
-      if [[ "$i" == *\/* ]]; then 
-        ROWID=$(echo "$i" | cut -c 2-) 
-        OUTPUT+="
-$ROWID  " 
-      else
+function convert()
+{ 
+        OUTPUT=""
         MB=$(($i / 1024 / 1024))
         KB=$(($i / 1024))
         if [ $MB -eq 0 ]; then
@@ -38,8 +34,24 @@ $ROWID  "
             else
                 OUTPUT+=$(printf "%-9s" $MB"MB")
             fi  
-        fi
-           
+        fi 
+        echo "$OUTPUT"
+}
+
+i=0
+ECL_TOTAL=0
+INDEX=0
+for i in $COL2; do
+    if [[ ! $i =~ ^[A-Za-z-]+$ ]]; then  
+      if [[ "$i" == *\/* ]]; then 
+        INDEX=0
+        ROWID=$(echo "$i" | cut -c 2-) 
+        OUTPUT+="
+$ROWID  " 
+      else
+        INDEX+=1
+        ECL_TOTAL=( $i + $ECL_TOTAL )
+        OUTPUT="$OUTPUT$(convert $i)"
        fi
     fi
 done  
@@ -65,3 +77,7 @@ for item in  $COL1; do
             fi
     done
 done
+printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
+i=$ECL_TOTAL
+printf "%-64s" " "  
+printf "Exclusive Total: $(convert $i) \n"
