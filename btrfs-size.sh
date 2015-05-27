@@ -17,9 +17,9 @@ COL2=$(echo "$COL2" | cut -c 2-)
 OUTPUT="" 
 function convert()
 { 
-        OUTPUT=""
-        MB=$(($i / 1024 / 1024))
-        KB=$(($i / 1024))
+        local OUTPUT=""
+        local MB=$(($i / 1024 / 1024))
+        local KB=$(($i / 1024))
         if [ $MB -eq 0 ]; then
             if [ $KB -eq 0 ]; then
                 OUTPUT+=$(printf "%-9s" $i"B")  
@@ -49,8 +49,10 @@ for i in $COL2; do
         OUTPUT+="
 $ROWID  " 
       else
-        INDEX+=1
-        ECL_TOTAL=( $i + $ECL_TOTAL )
+        ((INDEX++)) 
+        if [ $INDEX -eq 2 ]; then
+            ECL_TOTAL=$(($i + $ECL_TOTAL)) 
+        fi
         OUTPUT="$OUTPUT$(convert $i)"
        fi
     fi
