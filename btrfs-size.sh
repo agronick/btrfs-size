@@ -48,7 +48,7 @@ printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
 printf "%-67s" "Snapshot / Subvolume"
 printf "%-5s" "ID"
 printf "%-9s" "Total"
-printf "Non-shared"
+printf "Exclusive Data"
 printf "\n"
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
 
