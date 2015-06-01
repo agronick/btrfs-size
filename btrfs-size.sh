@@ -14,7 +14,7 @@ COL1=`sudo btrfs subvolume list "$LOCATION"`
 COL1=$(echo "$COL1" | cut -c 4-)
 
 
-COL2=`sudo btrfs qgroup show "$LOCATION" --raw 2>/dev/null`
+COL2=`sudo btrfs qgroup show "$LOCATION" --raw 2>&1`
 CONTINUE=false
 if [[ $COL2 == *"unrecognized option"* ]]; then
     COL2=`sudo btrfs qgroup show "$LOCATION" `
@@ -22,9 +22,11 @@ fi
 
 COL2=$(echo "$COL2" | cut -c 2-) 
  
+
+
 function convert()
 { 
-        OUT=`echo "$i" | awk '{ sum=$1 ; hum[1024**3]="GB";hum[1024**2]="MB";hum[1024]="KB"; for (x=1024**3; x>=1024; x/=1024){ if (sum>=x) { printf "%.2f%s\n",sum/x,hum[x];break } }}'`
+        OUT=`echo "$i" | awk '{ sum=$1 ; hum[1024^3]="GB";hum[1024^2]="MB";hum[1024]="KB"; for (x=1024^3; x>=1024; x/=1024){ if (sum>=x) { printf "%.2f%s\n",sum/x,hum[x];break } }}'`
         OUTPUT=$(printf "%-9s" $OUT) 
         echo "$OUTPUT"
 }
@@ -40,7 +42,7 @@ for i in $COL2; do
     if [[ ! $i =~ ^[A-Za-z-]+$ ]]; then  
       if [[ "$i" == *\/* ]]; then 
         INDEX=0
-        ROWID=$(echo "$i" | cut -c 2-) 
+        ROWID=$(echo "$i" | cut -c 2-)   
         OUTPUT+="
 $ROWID  " 
       else
