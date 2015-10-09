@@ -61,9 +61,9 @@ $ROWID  "
 done
 
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
-printf "%-67s" "Snapshot / Subvolume"
+printf "%-85s" "Snapshot / Subvolume"
 printf "%-5s" "ID"
-printf "%-9s" "Total"
+printf "%-10s" "Total"
 printf "Exclusive Data"
 printf "\n"
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
@@ -76,8 +76,21 @@ for item in  $COL1; do
     for item2 in $OUTPUT; do
         ID2=$(echo $item2 | grep -o '^[0-9.]\+' )
             if [ "$ID" = "$ID2" ]; then
-                printf "%-64s" $item
-                echo  "   $item2"
+                IFS=" " read -a dat <<< "$item"
+                printf "%4s " "${dat[0]}"
+                printf "%3s " "${dat[1]}"
+                printf "%6s " "${dat[2]}"
+                printf "%3s " "${dat[3]}"
+                printf "%5s " "${dat[4]}"
+                printf "%1s " "${dat[5]}"
+                printf "%-6s " "${dat[6]}"
+                printf "%-40s " "${dat[7]}"
+                printf "%-4s " "${dat[8]}"
+                IFS=" " read -a dat <<< "$item2"
+                printf "%6s " "${dat[0]}"
+                printf "%9s " "${dat[1]}"
+                printf "%10s " "${dat[2]}"
+                echo
                 break;
             fi
     done
@@ -86,6 +99,6 @@ done
 if [ $ECL_TOTAL -gt "1" ]; then
     printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
     i=$ECL_TOTAL
-    printf "%-64s" " "
+    printf "%-85s" " "
     printf "Exclusive Total: $(convert $i) \n"
 fi
