@@ -26,7 +26,7 @@ COL2=$(echo "$COL2" | cut -c 2-)
 
 function convert()
 { 
-        OUT=`echo "$i" | awk '{ sum=$1 ; hum[1024^3]="GB";hum[1024^2]="MB";hum[1024]="KB"; for (x=1024^3; x>=1024; x/=1024){ if (sum>=x) { printf "%.2f%s\n",sum/x,hum[x];break } }}'`
+        OUT=`echo "$i" | awk '{ sum=$1 ; hum[1024^4]="TB";hum[1024^3]="GB";hum[1024^2]="MB";hum[1024]="KB"; for (x=1024^4; x>=1024; x/=1024){ if (sum>=x) { printf "%.2f%s\n",sum/x,hum[x];break } }}'`
         OUTPUT=$(printf "%-9s" $OUT) 
         echo "$OUTPUT"
 }
