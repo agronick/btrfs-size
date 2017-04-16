@@ -1,3 +1,4 @@
+#!/bin/bash
 #Author Kyle Agronick <agronick@gmail.com>
 #Usage: Invoke this script to get the size of your subvolumes and snapshots
 #Make sure to run "sudo btrfs quota enable /" first
