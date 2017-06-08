@@ -59,15 +59,24 @@ $ROWID  "
         fi
        fi
     fi
-done  
+done
 
-printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
+# Determine terminal width
+if hash tput 2>/dev/null; then
+	COLS=`tput cols`
+elif hash stty 2>/dev/null; then
+	COLS=`stty size | cut -d' ' -f2`
+else
+	COLS=50 # Default
+fi
+
+printf '%*s\n' "${COLUMNS:-$COLS}" '' | tr ' ' =
 printf "%-67s" "Snapshot / Subvolume"
 printf "%-5s" "ID"
 printf "%-9s" "Total"
 printf "Exclusive Data"
 printf "\n"
-printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
+printf '%*s\n' "${COLUMNS:-$COLS}" '' | tr ' ' =
 
 
 IFS=$'\n'
@@ -85,7 +94,7 @@ for item in  $COL1; do
 done 
 
 if [ $ECL_TOTAL -gt "1" ]; then
-    printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
+    printf '%*s\n' "${COLUMNS:-$COLS}" '' | tr ' ' =
     i=$ECL_TOTAL
     printf "%-64s" " "  
     printf "Exclusive Total: $(convert $i) \n"
