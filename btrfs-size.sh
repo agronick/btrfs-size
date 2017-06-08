@@ -12,6 +12,12 @@ fi
 OUTPUT="" 
 
 COL1=`sudo btrfs subvolume list "$LOCATION"`
+
+if [ $? -ne 0 ]; then
+	echo "Failed to the volume data! BTRFS volume is required on the target location!"
+	exit 1
+fi
+
 COL1=$(echo "$COL1" | cut -d ' ' -f 2,9) # Only taking the ID and the Snapshot name
 
 COL2=`sudo btrfs qgroup show "$LOCATION" --raw 2>&1`
@@ -83,15 +89,18 @@ function printRow
 
 function printHorizontalLine
 {
-	printf '%*s\n' "${COLUMNS:-$COLCOUNT}" '' | tr ' ' '='
+	printf '%*s\n' $COLCOUNT '' | tr ' ' '='
 }
 
+# Header start
 printHorizontalLine
 printRow "Snapshot / Subvolume" "Total Exclusive Data" "ID"
 printHorizontalLine
+# Header end
 
 IFS=$'\n'
 
+# Table body start
 for item in  $COL1; do
     ID=$(echo $item | cut -d' ' -f1)
     name=$(echo $item | cut -d' ' -f2)
@@ -103,7 +112,8 @@ for item in  $COL1; do
 			break;
         fi
     done
-done 
+done
+# Table body end
 
 if [ $ECL_TOTAL -gt "1" ]; then
     printHorizontalLine
