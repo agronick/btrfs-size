@@ -80,9 +80,23 @@ declare -a COLUMNWIDHTS=(-$(($COLCOUNT-30)) 20 6)
 function printRow
 {
 	DATA=("$@")
+	
+	# The offset is calculated to help aligning the next column properly,
+	# if the preveious one was too long
+	local offset=0
 	for ((i=0;i < $#;i++))
 	{
-		printf "%${COLUMNWIDHTS[$i]}s " "${DATA[$i]}"
+		local modifier=""
+		local width=${COLUMNWIDHTS[$i]}
+		if [ $width -lt 0 ]; then
+			width=$((0-$width)) # Gettings abs value
+			modifier="-." # Left-padded and truncating if too long
+		fi
+		local pattern="%$modifier*s"
+		local column # The current column with padding
+		printf -v column $pattern $(($width + $offset)) "${DATA[$i]}"
+		printf "$column"
+		offset=$(($offset + $width - ${#column}))
 	}
 	printf "\n"
 }
