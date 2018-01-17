@@ -12,8 +12,13 @@ fi
 OUTPUT="" 
 
 COL1=`sudo btrfs subvolume list "$LOCATION"`
-COL1=$(echo "$COL1" | cut -c 4-)
 
+if [ $? -ne 0 ]; then
+	echo "Failed to the volume data! BTRFS volume is required on the target location!"
+	exit 1
+fi
+
+COL1=$(echo "$COL1" | cut -d ' ' -f 2,9) # Only taking the ID and the Snapshot name
 
 COL2=`sudo btrfs qgroup show "$LOCATION" --raw 2>&1`
 CONTINUE=false
@@ -21,8 +26,7 @@ if [[ $COL2 == *"unrecognized option"* ]]; then
     COL2=`sudo btrfs qgroup show "$LOCATION" `
 fi    
 
-COL2=$(echo "$COL2" | cut -c 2-) 
- 
+COL2=$(echo "$COL2" | cut -c 2-)
 
 
 function convert()
@@ -59,33 +63,74 @@ $ROWID  "
         fi
        fi
     fi
-done  
+done
 
-printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
-printf "%-67s" "Snapshot / Subvolume"
-printf "%-5s" "ID"
-printf "%-9s" "Total"
-printf "Exclusive Data"
-printf "\n"
-printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
 
+# Determine terminal width
+if hash tput 2>/dev/null; then
+	COLCOUNT=`tput cols`
+elif hash stty 2>/dev/null; then
+	COLCOUNT=`stty size | cut -d' ' -f2`
+else
+	COLCOUNT=80 # Default
+fi
+
+declare -a COLUMNWIDHTS=(-$(($COLCOUNT-30)) 20 6)
+
+function printRow
+{
+	DATA=("$@")
+	
+	# The offset is calculated to help aligning the next column properly,
+	# if the preveious one was too long
+	local offset=0
+	for ((i=0;i < $#;i++))
+	{
+		local modifier=""
+		local width=${COLUMNWIDHTS[$i]}
+		if [ $width -lt 0 ]; then
+			width=$((0-$width)) # Gettings abs value
+			modifier="-." # Left-padded and truncating if too long
+		fi
+		local pattern="%$modifier*s"
+		local column # The current column with padding
+		printf -v column $pattern $(($width + $offset)) "${DATA[$i]}"
+		printf "$column"
+		offset=$(($offset + $width - ${#column}))
+	}
+	printf "\n"
+}
+
+function printHorizontalLine
+{
+	printf '%*s\n' $COLCOUNT '' | tr ' ' '='
+}
+
+# Header start
+printHorizontalLine
+printRow "Snapshot / Subvolume" "Total Exclusive Data" "ID"
+printHorizontalLine
+# Header end
 
 IFS=$'\n'
 
+# Table body start
 for item in  $COL1; do
-    ID=$(echo $item | grep -o '^[0-9.]\+' )
-    for item2 in $OUTPUT; do 
-        ID2=$(echo $item2 | grep -o '^[0-9.]\+' )  
-            if [ "$ID" = "$ID2" ]; then
-                printf "%-64s" $item
-                echo  "   $item2"
-                break;
-            fi
+    ID=$(echo $item | cut -d' ' -f1)
+    name=$(echo $item | cut -d' ' -f2)
+    for item2 in $OUTPUT; do
+        ID2=$(echo $item2 | grep -o '^[0-9.]\+' )
+        if [ "$ID" = "$ID2" ]; then
+			eval ROWDATA=($(echo $name ${item2[@]} | awk -F' ' '{print $1, $3, $2}'))
+			printRow "${ROWDATA[@]}"
+			break;
+        fi
     done
-done 
+done
+# Table body end
 
 if [ $ECL_TOTAL -gt "1" ]; then
-    printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
+    printHorizontalLine
     i=$ECL_TOTAL
     printf "%-64s" " "  
     printf "Exclusive Total: $(convert $i) \n"
