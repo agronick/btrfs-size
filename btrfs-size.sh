@@ -21,6 +21,12 @@ fi
 COL1=$(echo "$COL1" | cut -d ' ' -f 2,9) # Only taking the ID and the Snapshot name
 
 COL2=`sudo btrfs qgroup show "$LOCATION" --raw 2>&1`
+
+if [ $? -ne 0 ]; then 
+    echo "Failed to get size on the target location! Is quota enabled?"
+    exit 1
+fi
+
 CONTINUE=false
 if [[ $COL2 == *"unrecognized option"* ]]; then
     COL2=`sudo btrfs qgroup show "$LOCATION" `
