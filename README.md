@@ -5,6 +5,16 @@ You will need to enable quotas first. Run this command as root: `btrfs quota ena
 
 For more information check out this [blog entry](https://poisonpacket.wordpress.com/2015/05/26/btrfs-snapshot-size-disk-usage/).
 
+To invoke just run:
+```bash
+./btrfs-size.sh
+```
+
+To run on a directory outside root run:
+```bash
+./btrfs-size.sh /path
+```
+
 Example output:
 ```
 Snapshot / Subvolume                                                            Total Exclusive Data    ID
